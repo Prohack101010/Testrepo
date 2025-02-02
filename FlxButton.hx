@@ -1,6 +1,8 @@
 package mobile.flixel;
 
-import flixel.graphics.frames.FlxFramesCollection;
+import flixel.FlxCamera;
+import flixel.FlxG;
+import flixel.FlxSprite;
 import flixel.graphics.atlas.FlxAtlas;
 import flixel.graphics.atlas.FlxNode;
 import flixel.graphics.frames.FlxTileFrames;
@@ -9,7 +11,11 @@ import flixel.input.FlxPointer;
 import flixel.input.IFlxInput;
 import flixel.input.touch.FlxTouch;
 import flixel.math.FlxPoint;
-import flixel.util.FlxDestroyUtil.IFlxDestroyable;
+import flixel.text.FlxText;
+import flixel.util.FlxDestroyUtil;
+#if desktop
+import flixel.input.mouse.FlxMouseButton;
+#end
 
 /**
  * A simple button class that calls a function when clicked by the touch.
@@ -37,15 +43,7 @@ class FlxButton extends FlxTypedButton<FlxText>
 	public var text(get, set):String;
 
 	/**
-		A simple tag that returns the button's graphic name in upper case.
-	**/
-	public var tag:String;
-	/**
-		The `FlxMobileInputID` that are assigned to this button.
-	**/
-	public var IDs:Array<FlxMobileInputID> = [];
-	/**
-		A Small invisible bounds used for colision
+	 * A small invisible bounds used for colision
 	**/
 	public var bounds:FlxSprite = new FlxSprite();
 
@@ -55,20 +53,17 @@ class FlxButton extends FlxTypedButton<FlxText>
 	 *
 	 * @param   X         The x position of the button.
 	 * @param   Y         The y position of the button.
-	 * @param   IDs        The button's IDs(used for input handling so be careful).
 	 * @param   Text      The text that you want to appear on the button.
 	 * @param   OnClick   The function to call whenever the button is clicked.
 	 */
-	public function new(X:Float = 0, Y:Float = 0, ?IDs:Array<FlxMobileInputID> = null, ?Text:String, ?OnClick:Void->Void):Void
+	public function new(X:Float = 0, Y:Float = 0, ?Text:String, ?OnClick:Void->Void):Void
 	{
 		super(X, Y, OnClick);
 
 		for (point in labelOffsets)
 			point.set(point.x - 1, point.y + 3);
 
-
 		initLabel(Text);
-		this.IDs = IDs == null ? [] : IDs;
 	}
 
 	/**
@@ -112,12 +107,12 @@ class FlxButton extends FlxTypedButton<FlxText>
 
 	public inline function centerInBounds()
 	{
-		setPosition(bounds.x + ((bounds.width - frameWidth) / 2), bounds.y + ((bounds.height - frameHeight) / 2));
+		setPosition(bounds.x + ((100 - frameWidth) / 2), bounds.y + ((55 - frameHeight) / 2));
 	}
 
 	public inline function centerBounds()
 	{
-		bounds.setPosition(x + ((frameWidth - bounds.width) / 2), y + ((frameHeight - bounds.height) / 2));
+		bounds.setPosition(x + ((frameWidth - 100) / 2), y + ((frameHeight - 55) / 2));
 	}
 }
 
@@ -394,9 +389,16 @@ class FlxTypedButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 		var overlap = false;
 
 		for (camera in cameras)
+		{
+		    #if desktop
+		    var button = FlxMouseButton.getByID(FlxMouseButtonID.LEFT);
+			if (checkInput(FlxG.mouse, button, button.justPressedPosition, camera) && ClientPrefs.data.VirtualPadAlpha != 0)
+			#else
 			for (touch in FlxG.touches.list)
 				if (checkInput(touch, touch, touch.justPressedPosition, camera))
+			#end
 					overlap = true;
+		}
 
 		return overlap;
 	}
