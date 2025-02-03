@@ -17,13 +17,7 @@ class CallbackHandler
 			args[i] = Convert.fromLua(l, i + 1);
 		}
 
-		var ret:Dynamic = null;
-
-		if (nparams <= 0) {
-			ret = cbf();
-		} else {
-			ret = Reflect.callMethod(null, cbf, args);
-		}
+		var ret:Dynamic = Reflect.callMethod(null, cbf, args);
 
 		if(ret != null){
 			Convert.toLua(l, ret);
