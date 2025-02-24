@@ -2,7 +2,10 @@
 <project>
 	<!-- _________________________ Application Settings _________________________ -->
 
-	<app title="FNF': Dragon Engine" file="Dragon Engine" packageName="com.kraloyuncu.funkinhorrorrecration" package="com.kraloyuncu.funkinhorrorrecration" main="Main" version="0.2.8" company="DubEnderDragon" />
+	<app title="FNF': Psych Extended" file="PsychExtended" packageName="com.kraloyuncu.psychextended" package="com.kraloyuncu.psychextended" main="Main" version="0.2.8" company="KralOyuncu" unless="debugBuild"/>
+	
+	<!--Debug Build Things -->
+	<app title="FNF': Psych Extended Debug" file="PsychExtended" packageName="com.kraloyuncu.psychextended.debug" package="com.kraloyuncu.psychextended.debug" main="Main" version="0.2.8" company="KralOyuncu" if="debugBuild"/>
 
 	<!--Switch Export with Unique ApplicationID and Icon-->
 	<set name="APP_ID" value="0x0100f6c013bbc000" />
@@ -21,7 +24,7 @@
 	<!-- ____________________________ Window Settings ___________________________ -->
 
 	<!--These window settings apply to all targets-->
-	<window width="640" height="360" fps="" background="#0x00000000" hardware="true" vsync="false" />
+	<window width="1280" height="720" fps="" background="#000000" hardware="true" vsync="false" />
 
 	<!--HTML5-specific-->
 	<window if="html5" resizable="true" />
@@ -43,22 +46,37 @@
 	
 	<!-- For Termux -->
 	<section if="termux">
-	    <set name="BUILD_DIR" value="/root/DragonEngine/export/debug" if="debug" />
-	    <set name="BUILD_DIR" value="/root/DragonEngine/export/release" unless="debug" />
-	    <set name="BUILD_DIR" value="/root/DragonEngine/export/32bit" if="32bits" />
+	    <set name="BUILD_DIR" value="/root/PsychExtended/export/debug" if="debug" />
+	    <set name="BUILD_DIR" value="/root/PsychExtended/export/release" unless="debug" />
+	    <set name="BUILD_DIR" value="/root/PsychExtended/export/32bit" if="32bits" />
 	</section>
+	<!-- Alternative -->
+	<!-- <set name="BUILD_DIR" value="/storage/emulated/0/.PsychEngine/export/release" if='termux' unless="debug" /> -->
 
 	<classpath name="source" />
 	
+	<!-- PSYCH EXTENDED CUSTOMIZATION -->
+	<define name="BASE_GAME_ASSETS" if="finalBuild" />
+	<!-- <define name="TouchPad" /> -->
+	<define name="HXVIRTUALPAD_ALLOWED" />
+	<define name="PLAYSTATE_VIRTUALPAD_ALLOWED" />
+	<!-- <define name="FILE_DIALOG_FOR_MOBILE" /> -->
+	<define name="PsychExtended_Extras" unless="extras_disabled"/> <!-- Delete this if you want to remove Extra Features (if you are making source mod, this will be useful) -->
+	<define name="HIDE_CURSOR" if="mobile" /> <!-- DELETE THIS IF YOU WANT TO SEE CURSOR IN MOBILE BUILDS -->
+	<architecture name="ARM64" exclude="ARMV7" if="32bits_disabled" /> <!-- Only Arm64 Build Because I dont want to wait 30 minute -->
+	
 	<!-- PSYCH ENGINE CUSTOMIZATION -->
-	<define name="WINDOW_ABILITY" if="desktop" />
+	<section if="officialBuild">
+    	<define name="TITLE_SCREEN_EASTER_EGG" />
+    	<define name="BASE_GAME_ASSETS" />
+	</section>
 	<define name="MODS_ALLOWED" if="desktop || mobile" />
-	<define name="LUA_ALLOWED" if="desktop || mobile" />
+	<define name="HSCRIPT_ALLOWED" if="desktop || mobile" />
+	<define name="LUA_ALLOWED" if="desktop || mobile"/>
 	<define name="ACHIEVEMENTS_ALLOWED" />
 	<define name="VIDEOS_ALLOWED" if="web || windows || mobile" unless="32bits"/>
 	<define name="PSYCH_WATERMARKS"/> <!-- DELETE THIS TO REMOVE WATERMARKS/DEV NAMES ON TITLE SCREEN -->
-	<define name="TITLE_SCREEN_EASTER_EGG" if="officialBuild"/> <!-- DELETE THE if="officialBuild" for enabling this on an unofficial build -->
-	<architecture name="ARM64" exclude="ARMV7" if="32bits_disabled" /> <!-- Only Arm64 Build Because I dont want to wait 30 minute -->
+	<define name="CRASH_HANDLER" if="desktop release || mobile" />
 
 	<assets path="assets/preload" rename="assets" exclude="*.ogg" if="web"/>
 	<assets path="assets/preload" rename="assets" exclude="*.mp3"  unless="web"/>
@@ -68,7 +86,7 @@
 	</section>
 
 	<!-- DONT ENABLE THIS -->
-	<define name="CHECK_FOR_UPDATES" if="desktop"/>
+	<define name="CHECK_FOR_UPDATES" if="officialBuild"/>
 
 	<!-- <define name="PRELOAD_ALL" /> -->
 	<define name="PRELOAD_ALL" unless="web" />
@@ -78,23 +96,13 @@
 	<section if="PRELOAD_ALL">
 		<library name="songs"         preload="true" />
 		<library name="shared"        preload="true" />
-		<library name="week2"         preload="true" />
-		<library name="week3"         preload="true" />
-		<library name="week4"         preload="true" />
-		<library name="week5"         preload="true" />
-		<library name="week6"         preload="true" />
-		<library name="week7"         preload="true" />
+		<library name="week_assets"   preload="true" />
 	</section>
 	
 	<section if="NO_PRELOAD_ALL">
-		<library name="songs"         preload="true" />
+		<library name="songs"         preload="false" />
 		<library name="shared"        preload="false" />
-		<library name="week2"         preload="false" />
-		<library name="week3"         preload="false" />
-		<library name="week4"         preload="false" />
-		<library name="week5"         preload="false" />
-		<library name="week6"         preload="false" />
-		<library name="week7"         preload="false" />
+		<library name="week_assets"   preload="false" />
 	</section>
 	
 	<assets path="assets/videos"        library="videos"        if="VIDEOS_ALLOWED"/>
@@ -102,21 +110,32 @@
 	<assets path="assets/songs"         library="songs"         exclude="*.mp3" unless="web"/>
 	<assets path="assets/shared"        library="shared"        exclude="*.ogg" if="web"/>
 	<assets path="assets/shared"        library="shared"        exclude="*.mp3" unless="web"/>
-	<assets path="assets/week2"         library="week2"         exclude="*.ogg" if="web"/>
-	<assets path="assets/week2"         library="week2"         exclude="*.mp3" unless="web"/>
-	<assets path="assets/week3"         library="week3"         exclude="*.ogg" if="web"/>
-	<assets path="assets/week3"         library="week3"         exclude="*.mp3" unless="web"/>
-	<assets path="assets/week4"         library="week4"         exclude="*.ogg" if="web"/>
-	<assets path="assets/week4"         library="week4"         exclude="*.mp3" unless="web"/>
-	<assets path="assets/week5"         library="week5"         exclude="*.ogg" if="web"/>
-	<assets path="assets/week5"         library="week5"         exclude="*.mp3" unless="web"/>
-	<assets path="assets/week6"         library="week6"         exclude="*.ogg" if="web"/>
-	<assets path="assets/week6"         library="week6"         exclude="*.mp3" unless="web"/>
-	<assets path="assets/week7"         library="week7"         exclude="*.ogg" if="web"/>
-	<assets path="assets/week7"         library="week7"         exclude="*.mp3" unless="web"/>
+	<section if="BASE_GAME_ASSETS">
+	<assets path="assets/base_game/preload"        rename="assets"                exclude="*.ogg"        if="web"/>
+	<assets path="assets/base_game/preload"        rename="assets"                exclude="*.mp3"       unless="web"/>
+	<assets path="assets/base_game/videos"         rename="assets/videos"         library="videos"        if="VIDEOS_ALLOWED"/>
+	<assets path="assets/base_game/songs"          rename="assets/songs"         library="songs"         exclude="*.ogg" if="web"/>
+	<assets path="assets/base_game/songs"          rename="assets/songs"         library="songs"         exclude="*.mp3" unless="web"/>
+	<assets path="assets/base_game/shared"         rename="assets/shared"         library="shared"        exclude="*.ogg" if="web"/>
+	<assets path="assets/base_game/shared"         rename="assets/shared"         library="shared"        exclude="*.mp3" unless="web"/>
+	<assets path="assets/base_game/week_assets"   library="week_assets"           rename="assets"       exclude="*.ogg" if="web"/>
+	<assets path="assets/base_game/week_assets"   library="week_assets"           rename="assets"       exclude="*.mp3" unless="web"/>
+	</section>
+	
+	<!-- Psych Extended Assets -->
+	<assets path="mobile/preload"        rename="assets"                exclude="*.ogg"        if="web"/>
+	<assets path="mobile/preload"        rename="assets"                exclude="*.mp3"       unless="web"/>
+	<assets path="mobile/shared"         rename="assets/shared"         library="shared"        exclude="*.ogg" if="web"/>
+	<assets path="mobile/shared"         rename="assets/shared"         library="shared"        exclude="*.mp3" unless="web"/>
+	
+	<section if="PsychExtended_Extras">
+	<assets path="assets/extras/preload"        rename="assets"                exclude="*.ogg"        if="web"/>
+	<assets path="assets/extras/preload"        rename="assets"                exclude="*.mp3"       unless="web"/>
+	</section>
 	
 	<section if="MODS_ALLOWED">
 		<assets path='example_mods' rename='mods' embed='false'/>
+		<assets path='example_modpack' rename='modpack' embed='false'/>
 	</section>
 	<assets path='art/readme.txt' rename='do NOT readme.txt' />
 	<!-- <template path='mods' /> -->
@@ -128,26 +147,35 @@
 		THEN UHHH I USED THE NAME OF THE FONT WITH SETFORMAT() ON THE TEXT!!!
 		NOT USING A DIRECT THING TO THE ASSET!!!
 	-->
-	<assets path="assets/fonts" embed='true'/>
+	<assets path="assets/fonts" />
 	<!-- _______________________________ Libraries ______________________________ -->
 
 	<haxelib name="flixel" />
-	<haxedev set='webgl' />
-
-	<!--In case you want to use the addons package-->
-	<haxelib name="flixel-addons" />
-	<haxelib name="hscript" />
-	<haxelib name="hxWindowColorMode" if="desktop"/>
-	<define name="hscriptPos" />
-
-	<!--In case you want to use the ui package-->
 	<haxelib name="flixel-ui" />
+	<haxelib name="flixel-addons" />
+	<haxelib name="flixel-ui" />
+	<haxedev set='webgl' />
+	
+	<!--Psych stuff needed-->
 	<haxelib name="linc_luajit" if="LUA_ALLOWED"/>
-	<haxelib name="hxCodec" if="VIDEOS_ALLOWED"/>
+	<haxelib name="hxCodec" />
+	<haxelib name="tjson"/>
+    <haxelib name="extension-androidtools" if="android"/>
 	<haxelib name="faxe" if='switch'/>
-	<!--<haxelib name="polymod"/> -->
 	<haxelib name="discord_rpc" if="desktop"/>
-	<!-- <haxelib name="hxcpp-debug-server" if="desktop"/> -->
+	<haxelib name="SScript" if="HSCRIPT_ALLOWED"/>
+	<haxedef name="openflPos" />
+	<haxedef name="hscriptPos" />
+	<haxelib name="hscript" />
+	<define name="hscriptPos" />
+	
+	<!-- Extra packages-->
+	<haxelib name="grig.audio" />
+	<haxelib name="flxanimate"/>
+	<haxelib name="funkin.vis"/>
+
+	<!-- Enables a terminal log prompt on debug builds -->
+	<!-- <haxelib name="hxcpp-debug-server"/> -->
 
 	<!-- <haxelib name="markdown" /> -->
 	<!-- <haxelib name="HtmlParser" /> -->
@@ -180,9 +208,6 @@
 
 	<!--Disable the Flixel core focus lost screen-->
 	<haxedef name="FLX_NO_FOCUS_LOST_SCREEN" />
-
-	<!--Allow working memory greater than 1 Gig-->
-	<!--haxedef name="HXCPP_GC_BIG_BLOCKS"-->
 	
 	<!-- Show debug traces for hxCodec -->
 	<haxedef name="HXC_DEBUG_TRACE" if="debug" />
@@ -204,13 +229,19 @@
 	<!-- Do whatever you want I'm tired uninstall and install everytime -->
 	<certificate path="key.keystore" password="psychengine" alias="psychport" alias-password="psychengine" if="android" unless="debug" />
 	<android target-sdk-version="34" if="termux"/>
+	
+	<!--Macro fixes-->
+	<haxeflag name="--macro" value="allowPackage('flash')" />
+	<haxeflag name="--macro" value="include('my.pack')" />
+	
+	<haxedef name="DISABLED_MACRO_SUPERLATIVE" if="android" />
 
 	<!-- _________________________________ Custom _______________________________ -->
 
 	<!--Place custom nodes like icons here (higher priority to override the HaxeFlixel icon)-->
 	
-	<icon path="draconisteam/icon16.png" size='16'/>
-	<icon path="draconisteam/icon32.png" size='32'/>
-	<icon path="draconisteam/icon64.png" size='64'/>
-	<icon path="draconisteam/iconOG.png" />
+	<icon path="art/icon16.png" size='16'/>
+	<icon path="art/icon32.png" size='32'/>
+	<icon path="art/icon64.png" size='64'/>
+	<icon path="art/iconOG.png" />
 </project>
