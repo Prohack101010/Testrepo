@@ -76,6 +76,23 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 	public var label(default, set):T;
 
 	/**
+	 * What offsets the `label` should have for each status.
+	 */
+	public var labelOffsets:Array<FlxPoint> = [FlxPoint.get(), FlxPoint.get(), FlxPoint.get(0, 1)];
+
+	/**
+	 * What alpha value the label should have for each status. Default is `[0.8, 1.0, 0.5]`.
+	 * Multiplied with the button's `alpha`.
+	 */
+	public var labelAlphas:Array<Float> = [0.8, 1.0, 0.5];
+
+	/**
+	 * What animation should be played for each status.
+	 * Default is ['normal', 'highlight', 'pressed'].
+	 */
+	public var statusAnimations:Array<String> = ['normal', 'highlight', 'pressed'];
+
+	/**
 	 * Whether you can press the button simply by releasing the touch button over it (default).
 	 * If false, the input has to be pressed while hovering over the button.
 	 */
@@ -92,6 +109,12 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 	 * Defaults to `Math.POSITIVE_INFINITY` (i.e. no limit).
 	 */
 	public var maxInputMovement:Float = Math.POSITIVE_INFINITY;
+
+	/**
+	 * Shows the current state of the button, either `TouchButton.NORMAL`,
+	 * `TouchButton.HIGHLIGHT` or `TouchButton.PRESSED`.
+	 */
+	public var status(default, set):Int;
 
 	/**
 	 * The properties of this button's `onUp` event (callback function, sound).
@@ -113,36 +136,6 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 	 */
 	public var onOut(default, null):TouchButtonEvent;
 
-	/**
-	 * Shows the current state of the button, either `TouchButton.NORMAL`,
-	 * `TouchButton.HIGHLIGHT` or `TouchButton.PRESSED`.
-	 */
-	public var status(default, set):Int;
-
-	/**
-	 * The alpha's the button should use depednging on the status.
-	**/
-	public var statusAlphas:Array<Float> = [1.0, 1.0, 0.6];
-
-	/**
-	 * The brightness the button should use depednging on the status.
-	**/
-	public var statusBrightness:Array<Float> = [1.0, 0.95, 0.7];
-
-	/**
-	 * How much to add/substract from the current indicator value for the label.
-	**/
-	public var labelStatusDiff:Float = 0.05;
-
-	/**
-	 * IF YOU'RE USING SPRITE GROUPS YOU MUST SET THIS TO THE GROUP'S ALPHA LIKE IN TouchPad.
-	**/
-	public var parentAlpha(default, set):Float = 1;
-
-	public var statusIndicatorType(default, set):StatusIndicators = ALPHA;
-
-	public var brightShader:ButtonBrightnessShader = new ButtonBrightnessShader();
-
 	public var justReleased(get, never):Bool;
 	public var released(get, never):Bool;
 	public var pressed(get, never):Bool;
@@ -163,7 +156,7 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 	 */
 	var currentInput:IFlxInput;
 
-	public var canChangeLabelAlpha:Bool = true;
+	var lastStatus = -1;
 
 	/**
 	 * Creates a new `FlxTypedButton` object with a gray background.
@@ -175,8 +168,7 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 	{
 		super(X, Y);
 
-		if (statusIndicatorType == BRIGHTNESS)
-			shader = brightShader;
+		loadDefaultGraphic();
 
 		onUp = new TouchButtonEvent();
 		onDown = new TouchButtonEvent();
@@ -188,7 +180,28 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 		// Since this is a UI element, the default scrollFactor is (0, 0)
 		scrollFactor.set();
 
+		statusAnimations[TouchButton.HIGHLIGHT] = 'normal';
+		labelAlphas[TouchButton.HIGHLIGHT] = 1;
+
 		input = new FlxInput(0);
+	}
+
+	override public function graphicLoaded():Void
+	{
+		super.graphicLoaded();
+
+		setupAnimation('normal', TouchButton.NORMAL);
+		setupAnimation('pressed', TouchButton.PRESSED);
+	}
+
+	function loadDefaultGraphic():Void
+		loadGraphic('flixel/images/ui/button.png', true, 80, 20);
+
+	function setupAnimation(animationName:String, frameIndex:Int):Void
+	{
+		// make sure the animation doesn't contain an invalid frame
+		frameIndex = Std.int(Math.min(frameIndex, #if (flixel < "5.3.0") animation.frames #else animation.numFrames #end - 1));
+		animation.add(animationName, [frameIndex]);
 	}
 
 	/**
@@ -204,6 +217,9 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 		onOver = FlxDestroyUtil.destroy(onOver);
 		onOut = FlxDestroyUtil.destroy(onOut);
 
+		labelOffsets = FlxDestroyUtil.putArray(labelOffsets);
+
+		labelAlphas = null;
 		currentInput = null;
 		input = null;
 
@@ -223,10 +239,20 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 			#if FLX_POINTER_INPUT
 			updateButton();
 			#end
+
+			// Trigger the animation only if the button's input status changes.
+			if (lastStatus != status)
+			{
+				updateStatusAnimation();
+				lastStatus = status;
+			}
 		}
 
 		input.update();
 	}
+
+	function updateStatusAnimation():Void
+		animation.play(statusAnimations[status]);
 
 	/**
 	 * Just draws the button graphic and text label to the screen.
@@ -235,10 +261,9 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 	{
 		super.draw();
 
-		if (_spriteLabel != null && _spriteLabel.graphic != null && _spriteLabel.pixels != null && _spriteLabel.visible)
+		if (_spriteLabel != null && _spriteLabel.visible)
 		{
-			if (_spriteLabel.cameras != cameras)
-				_spriteLabel.cameras = cameras;
+			_spriteLabel.cameras = cameras;
 			_spriteLabel.draw();
 		}
 	}
@@ -329,29 +354,17 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 
 	public function updateLabelPosition()
 	{
-		if (_spriteLabel != null)
+		if (_spriteLabel != null) // Label positioning
 		{
-			_spriteLabel.x = ((width - _spriteLabel.width) / 2) + (pixelPerfectPosition ? Math.floor(x) : x);
-			_spriteLabel.y = ((height - _spriteLabel.height) / 2) + (pixelPerfectPosition ? Math.floor(y) : y);
+			_spriteLabel.x = (pixelPerfectPosition ? Math.floor(x) : x) + labelOffsets[status].x;
+			_spriteLabel.y = (pixelPerfectPosition ? Math.floor(y) : y) + labelOffsets[status].y;
 		}
 	}
 
-	public function updateLabelScale()
+	function updateLabelAlpha()
 	{
-		if (_spriteLabel != null)
-			_spriteLabel.scale.set(scale.x, scale.y);
-	}
-
-	public function indicateStatus()
-	{
-		switch (statusIndicatorType)
-		{
-			case ALPHA:
-				alpha = statusAlphas[status];
-			case BRIGHTNESS:
-				brightShader.brightness.value = [statusBrightness[status]];
-			case NONE: // no balls
-		}
+		if (_spriteLabel != null && labelAlphas.length > status)
+			_spriteLabel.alpha = alpha * labelAlphas[status];
 	}
 
 	/**
@@ -408,33 +421,21 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 
 		updateLabelPosition();
 
-		if (statusIndicatorType == BRIGHTNESS && label != null && brightShader != null)
-			label.shader = brightShader;
-
 		return Value;
 	}
 
 	function set_status(Value:Int):Int
 	{
 		status = Value;
-		indicateStatus();
+		updateLabelAlpha();
 		return status;
 	}
 
 	override function set_alpha(Value:Float):Float
 	{
 		super.set_alpha(Value);
-		if (_spriteLabel != null && canChangeLabelAlpha)
-			_spriteLabel.alpha = alpha == 0 ? 0 : alpha + labelStatusDiff;
-		return Value;
-	}
-
-	override function set_visible(Value:Bool):Bool
-	{
-		super.set_visible(Value);
-		if (_spriteLabel != null)
-			_spriteLabel.visible = Value;
-		return Value;
+		updateLabelAlpha();
+		return alpha;
 	}
 
 	override function set_x(Value:Float):Float
@@ -449,66 +450,6 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 		super.set_y(Value);
 		updateLabelPosition();
 		return y;
-	}
-
-	override function set_color(Value:FlxColor):Int
-	{
-		if (_spriteLabel != null)
-			_spriteLabel.color = Value;
-		brightShader.color = Value;
-		super.set_color(Value);
-		return Value;
-	}
-
-	override private function set_width(Value:Float)
-	{
-		super.set_width(Value);
-		updateLabelScale();
-		return Value;
-	}
-
-	override private function set_height(Value:Float)
-	{
-		super.set_height(Value);
-		updateLabelScale();
-		return Value;
-	}
-
-	override public function updateHitbox()
-	{
-		super.updateHitbox();
-		if (_spriteLabel != null)
-			_spriteLabel.updateHitbox();
-	}
-
-	function set_parentAlpha(Value:Float):Float
-	{
-		statusAlphas = [
-			Value,
-			Value - 0.05,
-			(parentAlpha - 0.45 == 0 && parentAlpha > 0)
-			? 0.25 : parentAlpha - 0.45
-		];
-		indicateStatus();
-		return parentAlpha = Value;
-	}
-
-	function set_statusIndicatorType(Value:StatusIndicators)
-	{
-		if (Value == BRIGHTNESS)
-		{
-			shader = brightShader;
-			if (_spriteLabel != null)
-				_spriteLabel.shader = brightShader;
-		}
-		else
-		{
-			shader = null;
-			if (_spriteLabel != null)
-				_spriteLabel.shader = null;
-		}
-		statusIndicatorType = Value;
-		return Value;
 	}
 
 	inline function get_justReleased():Bool
@@ -579,50 +520,4 @@ private class TouchButtonEvent implements IFlxDestroyable
 			sound.play(true);
 		#end
 	}
-}
-
-class ButtonBrightnessShader extends FlxShader
-{
-	public var color(default, set):Null<FlxColor> = FlxColor.WHITE;
-
-	@:glFragmentSource('
-		#pragma header
-
-		uniform float brightness;
-
-		void main()
-		{
-			vec4 col = flixel_texture2D(bitmap, openfl_TextureCoordv);
-			col.rgb *= brightness;
-
-			gl_FragColor = col;
-		}
-	')
-	public function new()
-	{
-		super();
-	}
-
-	private function set_color(?laColor:FlxColor)
-	{
-		if (laColor == null)
-		{
-			colorMultiplier.value = [1, 1, 1, 1];
-			hasColorTransform.value = hasTransform.value = [false];
-			return color = laColor;
-		}
-		hasColorTransform.value = hasTransform.value = [true];
-		colorMultiplier.value = [laColor.redFloat, laColor.blueFloat, laColor.greenFloat, laColor.alphaFloat];
-		return color = laColor;
-	}
-}
-
-enum StatusIndicators
-{
-	// isn't very good looking
-	ALPHA;
-	// best one in my opinion
-	BRIGHTNESS;
-	// used when u make ur own status indicator like in hitbox
-	NONE;
 }
