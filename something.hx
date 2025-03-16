@@ -11,6 +11,7 @@ import flixel.input.mouse.FlxMouseButton;
 /**
  * A simple button class that calls a function when clicked by the touch.
  * @author: Karim Akra and Lily Ross (mcagabe19)
+ * @modifier: KralOyuncu2010X (ArkoseLabs)
  */
 class TouchButton extends TypedTouchButton<FlxSprite>
 {
@@ -451,6 +452,35 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 		updateLabelPosition();
 		return y;
 	}
+	
+	override function set_color(Value:FlxColor):Int
+ 	{
+ 		if (_spriteLabel != null)
+ 			_spriteLabel.color = Value;
+ 		super.set_color(Value);
+ 		return Value;
+ 	}
+ 
+ 	override private function set_width(Value:Float)
+ 	{
+ 		super.set_width(Value);
+ 		updateLabelScale();
+ 		return Value;
+ 	}
+ 
+ 	override private function set_height(Value:Float)
+ 	{
+ 		super.set_height(Value);
+ 		updateLabelScale();
+ 		return Value;
+ 	}
+ 
+ 	override public function updateHitbox()
+ 	{
+ 		super.updateHitbox();
+ 		if (_spriteLabel != null)
+ 			_spriteLabel.updateHitbox();
+ 	}
 
 	inline function get_justReleased():Bool
 		return input.justReleased;
