@@ -31,71 +31,62 @@ var globalTag:String = null;
 
 function makeVideoSprite(tag:String, videoPath:String, x:Float, y:Float, camera:String, ?scaleX:Float, ?scaleY:Float)
 {
-if (playedVideoName != tag) { //fix double video issue
-    playedVideoName = tag;
+    if (playedVideoName != tag) { //fix double video issue
+        playedVideoName = tag;
+        
+        var local:{sprite:FlxSprite, video:MP4Handler} =
+        {
+            sprite: null,
     
-    var local:{sprite:FlxSprite, video:MP4Handler} =
-    {
-        sprite: null,
-
-        video: null,
-    };
+            video: null,
+        };
+        
+        globalTag = tag;
     
-    globalTag = tag;
-
-    var sprite:FlxSprite = new FlxSprite();
-
-    sprite.camera = game.camOther;
-
-    sprite.setPosition(x, y);
-
-    game.modchartSprites[tag] = sprite;
-
-    local.sprite = sprite;
-
-    game.add(sprite);
+        var sprite:FlxSprite = new FlxSprite();
     
-    if (scaleX != null && scaleY != null) sprite.scale.set(scaleX, scaleY);
+        /*
+        if (camera != null)
+            sprite.camera = LuaUtils.cameraFromString(camera);
+        else */
+        sprite.cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
     
-	setVar("paused", false);
-
-    var video:MP4Handler = new MP4Handler();
+        sprite.setPosition(x, y);
     
-    video.alpha = 0.0;
+        game.modchartSprites[tag] = sprite;
     
-    video.canSkip = false;
-    if (!video.canSkip) setVar("canSkip", true); //Pause Menu
+        local.sprite = sprite;
     
-    video.finishCallback = function()
-	{
-		//game.startAndEnd();
-		
-		sprite.destroy();
-		game.callOnLuas('onVideoFinished', [tag]); //NOTE: That was added by someone.
-		return;
-	}
-	
-	local.video = video;
+        game.add(sprite);
+        
+        if (scaleX != null && scaleY != null) sprite.scale.set(scaleX, scaleY);
     
-    video.playVideo(Paths.video(tag));
-
-    global.push(local);
-    //trace('bro the video has been started!');
-}
+        var video:MP4Handler = new MP4Handler();
+        
+        video.alpha = 0.0;
+        
+        video.canSkip = false;
+        
+        video.finishCallback = function()
+    	{
+    		//game.startAndEnd();
+    		
+    		sprite.destroy();
+    		game.callOnLuas('onVideoFinished', [tag]); //NOTE: That was added by someone.
+    		return;
+    	}
+    	
+    	local.video = video;
+        
+        video.playVideo(Paths.video(tag));
+    
+        global.push(local);
+        //trace('bro the video has been started!');
+    }
 }
 
 function onUpdate(elapsed:Float):Void
 {
-    if (getVar("paused") && getVar("canSkip")) pauseVideo();
-    
-    if (!getVar("paused") && getVar("canSkip"))
-    {
-        if (FlxG.android.justReleased.BACK) {
-            game.openPauseMenu();
-            setVar("paused", true);
-        }
-    }
-    
     for (i in 0 ... global.length)
     {
         var local:{sprite:FlxSprite, video:MP4Handler} = global[i];
