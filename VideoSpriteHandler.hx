@@ -45,11 +45,7 @@ function makeVideoSprite(tag:String, videoPath:String, x:Float, y:Float, camera:
     
         var sprite:FlxSprite = new FlxSprite();
     
-        /*
-        if (camera != null)
-            sprite.camera = LuaUtils.cameraFromString(camera);
-        else */
-        sprite.cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
+        sprite.camera = game.camOther;
     
         sprite.setPosition(x, y);
     
@@ -60,12 +56,15 @@ function makeVideoSprite(tag:String, videoPath:String, x:Float, y:Float, camera:
         game.add(sprite);
         
         if (scaleX != null && scaleY != null) sprite.scale.set(scaleX, scaleY);
+        
+    	setVar("paused", false);
     
         var video:MP4Handler = new MP4Handler();
         
         video.alpha = 0.0;
         
         video.canSkip = false;
+        if (!video.canSkip) setVar("canSkip", true); //Pause Menu
         
         video.finishCallback = function()
     	{
@@ -87,6 +86,16 @@ function makeVideoSprite(tag:String, videoPath:String, x:Float, y:Float, camera:
 
 function onUpdate(elapsed:Float):Void
 {
+    if (getVar("paused") && getVar("canSkip")) pauseVideo();
+    
+    if (!getVar("paused") && getVar("canSkip"))
+    {
+        if (FlxG.android.justReleased.BACK) {
+            game.openPauseMenu();
+            setVar("paused", true);
+        }
+    }
+    
     for (i in 0 ... global.length)
     {
         var local:{sprite:FlxSprite, video:MP4Handler} = global[i];
