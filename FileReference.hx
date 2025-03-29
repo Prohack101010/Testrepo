@@ -571,7 +571,7 @@ class FileReference extends EventDispatcher
 		__data = null;
 		__path = null;
 
-		#if (desktop || android)
+		#if desktop
 		var filter = null;
 
 		if (typeFilter != null)
@@ -1062,7 +1062,7 @@ class FileReference extends EventDispatcher
 
 		if (data == null) return;
 
-		#if (desktop || android)
+		#if desktop
 		if ((data is ByteArrayData))
 		{
 			__data = data;
